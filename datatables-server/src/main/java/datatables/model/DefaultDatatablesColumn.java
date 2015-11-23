@@ -1,5 +1,7 @@
 package datatables.model;
 
+import org.apache.commons.lang.StringUtils;
+
 public class DefaultDatatablesColumn implements DatatablesColumn {
     private String data;
     private String name;
@@ -45,5 +47,14 @@ public class DefaultDatatablesColumn implements DatatablesColumn {
 
     public void setSearch(DatatablesSearch search) {
         this.search = search;
+    }
+
+    @Override
+    public boolean hasSearch() {
+        if(this.search == null) {
+            return false;
+        }
+
+        return StringUtils.isNotBlank(this.search.getValue());
     }
 }

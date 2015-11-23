@@ -10,4 +10,6 @@ public interface DatatablesColumn {
     boolean isOrderable();
 
     DatatablesSearch getSearch();
+
+    boolean hasSearch();
 }

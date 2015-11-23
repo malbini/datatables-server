@@ -1,5 +1,6 @@
 package datatables.jdbc;
 
+import datatables.model.DatatablesSearch;
 import datatables.server.ColumnDefinition;
 import datatables.model.DatatablesColumn;
 import datatables.model.DatatablesOrder;
@@ -7,6 +8,8 @@ import datatables.model.DatatablesRequest;
 import datatables.server.TableDefinition;
 
 import javax.sql.DataSource;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class OracleDatatablesQueryProvider implements DatatablesQueryProvider {
 
@@ -28,16 +31,24 @@ public class OracleDatatablesQueryProvider implements DatatablesQueryProvider {
         sqlBuilder.appendQuery(this.sqlQuery);
         sqlBuilder.append("WHERE 1=1");
 
+        final Map<String, Object> parameters = new LinkedHashMap<String, Object>();
+
         // Filter
-        this.appendFilter(datatablesRequest, sqlBuilder);
+        this.appendGlobalFilter(datatablesRequest, sqlBuilder, parameters);
+
+        // Columns Filter
+        this.appendColumnsFilter(datatablesRequest, sqlBuilder, parameters);
 
         // Order
         this.appendOrder(datatablesRequest, sqlBuilder);
 
-        return new OracleDatatablesQuery(this.dataSource, sqlBuilder.toString());
+        final OracleDatatablesQuery oracleDatatablesQuery = new OracleDatatablesQuery(this.dataSource, sqlBuilder.toString());
+        oracleDatatablesQuery.setParameters(parameters);
+
+        return oracleDatatablesQuery;
     }
 
-    private void appendFilter(DatatablesRequest datatablesRequest, SqlBuilder sqlBuilder) {
+    private void appendGlobalFilter(DatatablesRequest datatablesRequest, SqlBuilder sqlBuilder, Map<String, Object> parameters) {
         if (!datatablesRequest.hasSearch()) {
             return;
         }
@@ -64,6 +75,24 @@ public class OracleDatatablesQueryProvider implements DatatablesQueryProvider {
         if (searchQuery.length() > 0) {
             sqlBuilder.append("AND");
             sqlBuilder.appendInner(searchQuery.toString());
+            parameters.put(DatatablesQuery.DATATABLES_SEARCH_PARAM_NAME, likeValue(datatablesRequest.getSearch().getValue()));
+        }
+    }
+
+    private void appendColumnsFilter(DatatablesRequest datatablesRequest, SqlBuilder sqlBuilder, Map<String, Object> parameters) {
+        for (DatatablesColumn column : datatablesRequest.getColumns()) {
+            final String columnName = column.getData();
+
+            if(column.hasSearch() && column.isSearchable() && this.tableDefinition.containsColumn(columnName)) {
+
+                final ColumnDefinition columnDefinition = this.tableDefinition.getColumn(columnName);
+                final DatatablesSearch columnSearch = column.getSearch();
+
+                if (columnDefinition.getType().isAssignableFrom(String.class)) {
+                    sqlBuilder.append("AND UPPER(").append(columnDefinition.getSource()).append(")").append(" LIKE UPPER(").appendParameter(columnName).append(")");
+                    parameters.put(columnName, likeValue(columnSearch.getValue()));
+                }
+            }
         }
     }
 
@@ -91,5 +120,9 @@ public class OracleDatatablesQueryProvider implements DatatablesQueryProvider {
         if (orderQuery.length() > 0) {
             sqlBuilder.append("ORDER BY").append(orderQuery.toString());
         }
+    }
+
+    private static String likeValue(String value) {
+        return "%" + value + "%";
     }
 }

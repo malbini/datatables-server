@@ -33,6 +33,11 @@ public class OracleDatatablesQuery implements DatatablesQuery {
     }
 
     @Override
+    public void setParameters(Map<String, Object> parameters) {
+        this.parameters.putAll(parameters);
+    }
+
+    @Override
     public <T> List<T> data(RowMapper<T> rowMapper) {
         return this.jdbcOperations.query(this.query, rowMapper);
     }

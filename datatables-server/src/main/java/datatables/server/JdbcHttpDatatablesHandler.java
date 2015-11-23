@@ -51,11 +51,8 @@ public class JdbcHttpDatatablesHandler<T> implements HttpDatatablesHandler {
     public DatatablesResponse handle(DatatablesRequest datatablesRequest, DatatablesQueryFilter filter) {
         final DatatablesQuery searchQuery = this.datatablesQueryProvider.createQueryForRequest(datatablesRequest);
 
+        // Apply Additional filter
         filter.applyFilter(searchQuery);
-
-        if (datatablesRequest.hasSearch()) {
-            searchQuery.setParameter(DatatablesQuery.DATATABLES_SEARCH_PARAM_NAME, "%" + datatablesRequest.getSearch().getValue() + "%");
-        }
 
         List<T> result = searchQuery.limitedData(this.rowMapper,
                                                  datatablesRequest.getStart(),
