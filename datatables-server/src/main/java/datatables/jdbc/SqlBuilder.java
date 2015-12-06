@@ -11,6 +11,10 @@ class SqlBuilder {
 
     private StringBuilder strBuilder = new StringBuilder();
 
+    public int length() {
+        return this.strBuilder.length();
+    }
+
     public SqlBuilder append(String str, boolean addSpace) {
         if(addSpace && this.strBuilder.length() > 0) {
             this.strBuilder.append(SPACE);
@@ -24,8 +28,12 @@ class SqlBuilder {
         return this.append(str, true);
     }
 
+    public SqlBuilder appendNS(String str) {
+        return this.append(str, false);
+    }
+
     public SqlBuilder appendParameter(String parameterName) {
-        return this.append(PARAMETER_PREFIX + parameterName, true);
+        return this.append(PARAMETER_PREFIX + parameterName, false);
     }
 
     public SqlBuilder append() {

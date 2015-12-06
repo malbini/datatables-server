@@ -1,5 +1,7 @@
 package datatables.server;
 
+import org.apache.commons.lang.ClassUtils;
+
 public final class ColumnDefinition {
     private String name;
     private Class<?> type;
@@ -19,6 +21,10 @@ public final class ColumnDefinition {
 
     public Class<?> getType() {
         return type;
+    }
+
+    public Class<?> getWrapperType() {
+        return ClassUtils.primitiveToWrapper(this.type);
     }
 
     public String getSource() {

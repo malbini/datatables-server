@@ -53,7 +53,7 @@ public class OracleDatatablesQueryProvider implements DatatablesQueryProvider {
             return;
         }
 
-        StringBuilder searchQuery = new StringBuilder();
+        SqlBuilder searchQuery = new SqlBuilder();
 
         for (DatatablesColumn column : datatablesRequest.getColumns()) {
             final String columnName = column.getData();
@@ -62,12 +62,16 @@ public class OracleDatatablesQueryProvider implements DatatablesQueryProvider {
 
                 final ColumnDefinition columnDefinition = this.tableDefinition.getColumn(columnName);
 
-                if (columnDefinition.getType().isAssignableFrom(String.class)) {
+                if (columnDefinition.getType().isAssignableFrom(String.class) || columnDefinition.getWrapperType().isAssignableFrom(Integer.class) || columnDefinition.getWrapperType().isAssignableFrom(Long.class)) {
                     if (searchQuery.length() > 0) {
                         searchQuery.append(" OR ");
                     }
 
-                    searchQuery.append("UPPER(").append(columnDefinition.getSource()).append(")").append(" LIKE UPPER(:").append(DatatablesQuery.DATATABLES_SEARCH_PARAM_NAME).append(")");
+                    if (columnDefinition.getType().isAssignableFrom(String.class)) {
+                        searchQuery.append("UPPER(").appendNS(columnDefinition.getSource()).appendNS(")").append("LIKE UPPER(").appendParameter(DatatablesQuery.DATATABLES_SEARCH_PARAM_NAME).appendNS(")");
+                    } else if(columnDefinition.getWrapperType().isAssignableFrom(Integer.class) || columnDefinition.getWrapperType().isAssignableFrom(Long.class)) {
+                        searchQuery.append("TO_CHAR(").appendNS(columnDefinition.getSource()).appendNS(")").append("LIKE UPPER(").appendParameter(DatatablesQuery.DATATABLES_SEARCH_PARAM_NAME).appendNS(")");
+                    }
                 }
             }
         }
@@ -89,7 +93,10 @@ public class OracleDatatablesQueryProvider implements DatatablesQueryProvider {
                 final DatatablesSearch columnSearch = column.getSearch();
 
                 if (columnDefinition.getType().isAssignableFrom(String.class)) {
-                    sqlBuilder.append("AND UPPER(").append(columnDefinition.getSource()).append(")").append(" LIKE UPPER(").appendParameter(columnName).append(")");
+                    sqlBuilder.append("AND UPPER(").append(columnDefinition.getSource()).appendNS(")").append("LIKE UPPER(").appendParameter(columnName).appendNS(")");
+                    parameters.put(columnName, likeValue(columnSearch.getValue()));
+                } else if(columnDefinition.getWrapperType().isAssignableFrom(Integer.class) || columnDefinition.getWrapperType().isAssignableFrom(Long.class)) {
+                    sqlBuilder.append("AND TO_CHAR(").append(columnDefinition.getSource()).appendNS(")").append("LIKE UPPER(").appendParameter(columnName).appendNS(")");
                     parameters.put(columnName, likeValue(columnSearch.getValue()));
                 }
             }
