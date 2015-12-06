@@ -35,11 +35,42 @@ $(function() {
         order: [[0, "asc"], [1, "asc"]]
     });
 
-    $airportsTab.find("thead th").each( function () {
-        var title = $(this).text();
+    $(datatable.table().header()).find("th").each( function(index) {
+        var $this = $(this);
+        $this.off("click.DT");
+
+        var title = $this.text();
         var $search = $('<input type="text" />');
         $search.attr("placeholder", "Search " + title);
-        $(this).append($search);
+        $search.addClass("column-filter");
+        $this.append($search);
+
+        $this.click(function(e){
+            if(!$(e.target).hasClass("column-filter")) {
+                $this.blur(); // Remove Focus
+
+                var orderArray = datatable.order();
+                var foundIndex = false;
+
+                for(var i=0;i<orderArray.length;i++) {
+                    if(orderArray[i][0] === index) {
+                        foundIndex = true;
+
+                        if(orderArray[i][1] == "asc") {
+                            datatable.column(index).order("desc");
+                        } else {
+                            datatable.column(index).order("asc");
+                        }
+                    }
+                }
+
+                if(!foundIndex) {
+                    datatable.column(index).order("asc");
+                }
+
+                datatable.draw();
+            }
+        })
     });
 
     datatable.columns().every( function () {
